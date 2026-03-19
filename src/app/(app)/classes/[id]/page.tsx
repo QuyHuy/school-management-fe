@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudentsImportPanel } from "@/features/students-import/StudentsImportPanel";
 import { AttendancePanel } from "@/features/attendance/AttendancePanel";
+import { GradesPanel } from "@/features/grades/GradesPanel";
 
 export default function ClassDetailPage({ params }: { params: { id: string } }) {
   const classId = useMemo(() => Number(params.id), [params.id]);
@@ -35,7 +36,7 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
           <AttendancePanel classId={classId} />
         </TabsContent>
         <TabsContent value="grades">
-          <div className="text-sm text-muted-foreground">Sắp triển khai: nhập điểm + gradebook.</div>
+          <GradesPanel classId={classId} />
         </TabsContent>
       </Tabs>
     </div>
