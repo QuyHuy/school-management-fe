@@ -127,3 +127,17 @@
     @apply font-sans;
   }
 }
+
+@layer components {
+  .status-info {
+    @apply rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900;
+  }
+
+  .status-success {
+    @apply rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900;
+  }
+
+  .status-warn {
+    @apply rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900;
+  }
+}

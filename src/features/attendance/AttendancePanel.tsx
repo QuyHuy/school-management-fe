@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -48,6 +49,7 @@ export function AttendancePanel({ classId }: { classId: number }) {
   const [note, setNote] = useState("");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const [session, setSession] = useState<SessionResponse | null>(null);
 
@@ -81,6 +83,7 @@ export function AttendancePanel({ classId }: { classId: number }) {
 
   const createSession = async () => {
     setError(null);
+    setSuccess(null);
     setCreating(true);
     try {
       const resp = await apiFetch<SessionResponse>(`/classes/${classId}/sessions`, {
@@ -95,6 +98,7 @@ export function AttendancePanel({ classId }: { classId: number }) {
       });
       setSession(resp);
       setEntries({});
+      setSuccess(`Đã tạo buổi học #${resp.id}. Bạn có thể điểm danh ngay bên dưới.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Tạo buổi học thất bại.");
     } finally {
@@ -119,6 +123,14 @@ export function AttendancePanel({ classId }: { classId: number }) {
     setEntries(next);
   };
 
+  const setAllStatus = (status: AttendanceStatus) => {
+    const next: Record<number, AttendanceEntry> = {};
+    for (const s of students) {
+      next[s.id] = { ...ensureEntry(s.id), status };
+    }
+    setEntries(next);
+  };
+
   const setEntryNote = (studentId: number, v: string) => {
     const next = { ...entries };
     const base = ensureEntry(studentId);
@@ -129,6 +141,7 @@ export function AttendancePanel({ classId }: { classId: number }) {
   const saveAttendance = async () => {
     if (!session) return;
     setError(null);
+    setSuccess(null);
     setSaving(true);
     try {
       const payload: AttendanceEntry[] = studentIds.map((sid) => ensureEntry(sid));
@@ -136,8 +149,7 @@ export function AttendancePanel({ classId }: { classId: number }) {
         method: "POST",
         body: JSON.stringify({ entries: payload }),
       });
-      // keep it simple: show updated count as inline text
-      setError(`Đã lưu điểm danh: ${resp.updated} học sinh.`);
+      setSuccess(`Đã lưu điểm danh cho ${resp.updated} học sinh.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Lưu điểm danh thất bại.");
     } finally {
@@ -151,7 +163,7 @@ export function AttendancePanel({ classId }: { classId: number }) {
         <CardHeader>
           <CardTitle>Tạo buổi học</CardTitle>
           <CardDescription>
-            Chọn ngày và hình thức học. Sau khi tạo buổi, bạn có thể điểm danh.
+            Bước 1: Chọn ngày/hình thức. Bước 2: Tạo buổi học. Bước 3: Điểm danh danh sách học sinh.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -185,10 +197,11 @@ export function AttendancePanel({ classId }: { classId: number }) {
 
           <div className="space-y-2">
             <Label htmlFor="note">Ghi chú</Label>
-            <Input id="note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Buổi 1..." />
+            <Input id="note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ví dụ: Buổi 1, kiểm tra bài cũ" />
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">Mặc định trạng thái điểm danh là “Có mặt”.</div>
             <Button onClick={createSession} disabled={creating}>
               {creating ? "Đang tạo..." : "Tạo buổi học"}
             </Button>
@@ -196,71 +209,71 @@ export function AttendancePanel({ classId }: { classId: number }) {
         </CardContent>
       </Card>
 
-      {error && (
-        <div className="rounded-md border border-border bg-card px-3 py-2 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <div className="status-warn">{error}</div>}
+      {success && <div className="status-success">{success}</div>}
 
       {session && (
         <Card>
           <CardHeader>
-            <CardTitle>Điểm danh cho buổi #{session.id}</CardTitle>
-            <CardDescription>
-              Chọn trạng thái cho từng học sinh. Mặc định là “Có mặt”.
-            </CardDescription>
+            <div className="flex flex-wrap items-center gap-2">
+              <CardTitle>Điểm danh cho buổi #{session.id}</CardTitle>
+              <Badge variant="secondary">{session.date}</Badge>
+              <Badge variant="outline">{session.mode}</Badge>
+            </div>
+            <CardDescription>Chỉnh trạng thái từng học sinh, hoặc dùng thao tác nhanh ở phía dưới.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {loadingStudents ? (
-              <div className="text-sm text-muted-foreground">Đang tải danh sách học sinh...</div>
+              <div className="status-info">Đang tải danh sách học sinh...</div>
             ) : students.length === 0 ? (
-              <div className="text-sm text-muted-foreground">Lớp chưa có học sinh. Hãy import CSV ở tab Học sinh.</div>
+              <div className="status-warn">Lớp chưa có học sinh. Hãy import CSV ở tab Học sinh trước.</div>
             ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[80px]">ID</TableHead>
-                      <TableHead>Họ tên</TableHead>
-                      <TableHead className="w-[180px]">Trạng thái</TableHead>
-                      <TableHead>Ghi chú</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {students.map((s) => {
-                      const e = ensureEntry(s.id);
-                      return (
-                        <TableRow key={s.id}>
-                          <TableCell className="font-medium">{s.id}</TableCell>
-                          <TableCell className="font-medium">{s.full_name}</TableCell>
-                          <TableCell>
-                            <Select
-                              value={e.status}
-                              onValueChange={(v) => setStatus(s.id, v as AttendanceStatus)}
-                            >
-                              <SelectTrigger className="w-[160px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="present">Có mặt</SelectItem>
-                                <SelectItem value="late">Đi muộn</SelectItem>
-                                <SelectItem value="absent">Vắng</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              value={e.note ?? ""}
-                              onChange={(ev) => setEntryNote(s.id, ev.target.value)}
-                              placeholder="Tuỳ chọn..."
-                            />
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
+              <>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" onClick={() => setAllStatus("present")}>Đánh dấu tất cả có mặt</Button>
+                  <Button type="button" variant="outline" onClick={() => setAllStatus("absent")}>Đánh dấu tất cả vắng</Button>
+                  <Button type="button" variant="outline" onClick={() => setAllStatus("late")}>Đánh dấu tất cả đi muộn</Button>
+                </div>
+
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">ID</TableHead>
+                        <TableHead>Họ tên</TableHead>
+                        <TableHead className="w-[180px]">Trạng thái</TableHead>
+                        <TableHead>Ghi chú</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {students.map((s) => {
+                        const e = ensureEntry(s.id);
+                        return (
+                          <TableRow key={s.id}>
+                            <TableCell className="font-medium">{s.id}</TableCell>
+                            <TableCell className="font-medium">{s.full_name}</TableCell>
+                            <TableCell>
+                              <Select value={e.status} onValueChange={(v) => setStatus(s.id, v as AttendanceStatus)}>
+                                <SelectTrigger className="w-[160px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="present">Có mặt</SelectItem>
+                                  <SelectItem value="late">Đi muộn</SelectItem>
+                                  <SelectItem value="absent">Vắng</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell>
+                              <Input value={e.note ?? ""} onChange={(ev) => setEntryNote(s.id, ev.target.value)} placeholder="Tuỳ chọn..." />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
 
             <div className="flex justify-end">
@@ -274,4 +287,3 @@ export function AttendancePanel({ classId }: { classId: number }) {
     </div>
   );
 }
-

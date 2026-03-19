@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -58,6 +59,7 @@ export function StudentsImportPanel({ classId }: { classId: number }) {
   const [previewing, setPreviewing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const [teacherNote, setTeacherNote] = useState("");
 
@@ -70,15 +72,19 @@ export function StudentsImportPanel({ classId }: { classId: number }) {
   const previewCsv = async () => {
     if (!file) return;
     setError(null);
+    setSuccess(null);
     setPreviewing(true);
     try {
       const form = new FormData();
       form.append("file", file);
-      const resp = await apiFetch<PreviewResponse>(
-        `/classes/${classId}/students/import/preview`,
-        { method: "POST", body: form },
-      );
+      const resp = await apiFetch<PreviewResponse>(`/classes/${classId}/students/import/preview`, {
+        method: "POST",
+        body: form,
+      });
       setPreview(resp);
+      if (resp.valid_rows.length > 0 && resp.errors.length === 0) {
+        setSuccess("CSV hợp lệ hoàn toàn. Bạn có thể import ngay.");
+      }
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
@@ -95,26 +101,21 @@ export function StudentsImportPanel({ classId }: { classId: number }) {
   const confirmImport = async () => {
     if (!preview) return;
     setError(null);
+    setSuccess(null);
     setConfirming(true);
     try {
-      const resp = await apiFetch<ConfirmResponse>(
-        `/classes/${classId}/students/import/confirm`,
-        {
-          method: "POST",
-          body: JSON.stringify({ rows: preview.valid_rows }),
-        },
-      );
-      // show accounts in a simple way; teacher can copy out
-      setPreview({
-        valid_rows: [],
-        errors: [],
+      const resp = await apiFetch<ConfirmResponse>(`/classes/${classId}/students/import/confirm`, {
+        method: "POST",
+        body: JSON.stringify({ rows: preview.valid_rows }),
       });
+      setPreview({ valid_rows: [], errors: [] });
+      setSuccess(`Import thành công ${resp.created} học sinh. Hệ thống đã tải file tài khoản tạm.`);
       downloadTextFile(
         `import-result-class-${classId}.txt`,
         [
           `Created: ${resp.created}`,
           "",
-          ...resp.accounts.map((a) => `${a.email}\t${a.temporary_password}`),
+          ...resp.accounts.map((a) => `${a.email}	${a.temporary_password}`),
           "",
           teacherNote ? `Teacher note: ${teacherNote}` : "",
         ]
@@ -146,12 +147,18 @@ export function StudentsImportPanel({ classId }: { classId: number }) {
         <CardHeader>
           <CardTitle>Import học sinh bằng CSV</CardTitle>
           <CardDescription>
-            Tải mẫu CSV, điền danh sách học sinh, sau đó upload để preview lỗi trước khi import.
+            Thực hiện theo 3 bước để giảm lỗi dữ liệu: <strong>Tải mẫu</strong> → <strong>Preview</strong> → <strong>Import</strong>.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">Bước 1: Tải mẫu CSV</Badge>
+            <Badge variant="outline">Bước 2: Upload & Preview</Badge>
+            <Badge variant="secondary">Bước 3: Confirm Import</Badge>
+          </div>
+
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div className="space-y-2">
+            <div className="space-y-2 sm:max-w-xl">
               <Label htmlFor="csv">File CSV</Label>
               <Input
                 id="csv"
@@ -161,6 +168,8 @@ export function StudentsImportPanel({ classId }: { classId: number }) {
                   const f = e.target.files?.[0] ?? null;
                   setFile(f);
                   setPreview(null);
+                  setSuccess(null);
+                  setError(null);
                 }}
               />
               <p className="text-xs text-muted-foreground">
@@ -169,43 +178,40 @@ export function StudentsImportPanel({ classId }: { classId: number }) {
             </div>
 
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => downloadTextFile("students-template.csv", CSV_TEMPLATE)}
-              >
+              <Button type="button" variant="outline" onClick={() => downloadTextFile("students-template.csv", CSV_TEMPLATE)}>
                 Tải mẫu CSV
               </Button>
               <Button type="button" onClick={previewCsv} disabled={!canPreview}>
-                {previewing ? "Đang preview..." : "Preview"}
+                {previewing ? "Đang preview..." : "Preview dữ liệu"}
               </Button>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="note">Ghi chú (tuỳ chọn)</Label>
+            <Label htmlFor="note">Ghi chú giáo viên (tuỳ chọn)</Label>
             <Textarea
               id="note"
-              placeholder="Ví dụ: Lớp 10A1, nhập ngày 18/03..."
+              placeholder="Ví dụ: Lớp 10A1, nhập ngày 19/03..."
               value={teacherNote}
               onChange={(e) => setTeacherNote(e.target.value)}
             />
           </div>
 
-          {error && (
-            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </div>
-          )}
+          <div className="status-info">
+            Sau khi import thành công, hệ thống sẽ tải file tài khoản tạm của học sinh. Bạn nên lưu trữ file này an toàn.
+          </div>
+
+          {error && <div className="status-warn">{error}</div>}
+          {success && <div className="status-success">{success}</div>}
 
           {preview && (
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-md border bg-card px-3 py-2">
-                <div className="text-xs text-muted-foreground">Valid rows</div>
-                <div className="text-lg font-semibold">{validCount}</div>
+                <div className="text-xs text-muted-foreground">Dòng hợp lệ</div>
+                <div className="text-lg font-semibold text-emerald-700">{validCount}</div>
               </div>
               <div className="rounded-md border bg-card px-3 py-2">
-                <div className="text-xs text-muted-foreground">Errors</div>
+                <div className="text-xs text-muted-foreground">Dòng lỗi</div>
                 <div className="text-lg font-semibold text-destructive">{errorCount}</div>
               </div>
               <div className="flex items-center justify-end">
@@ -221,8 +227,8 @@ export function StudentsImportPanel({ classId }: { classId: number }) {
       {preview && preview.valid_rows.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Preview hợp lệ</CardTitle>
-            <CardDescription>Các dòng hợp lệ sẽ được import khi bấm Import.</CardDescription>
+            <CardTitle>Dữ liệu hợp lệ</CardTitle>
+            <CardDescription>Các dòng dưới đây sẽ được import khi bạn bấm nút Import.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
@@ -238,9 +244,7 @@ export function StudentsImportPanel({ classId }: { classId: number }) {
                   {preview.valid_rows.map((row, idx) => (
                     <TableRow key={idx}>
                       {columns.map((c) => (
-                        <TableCell key={c.key}>
-                          {(row as unknown as Record<string, string | null>)[c.key] ?? ""}
-                        </TableCell>
+                        <TableCell key={c.key}>{(row as unknown as Record<string, string | null>)[c.key] ?? ""}</TableCell>
                       ))}
                     </TableRow>
                   ))}
@@ -254,10 +258,8 @@ export function StudentsImportPanel({ classId }: { classId: number }) {
       {preview && preview.errors.length > 0 && (
         <Card className="border-destructive/30">
           <CardHeader>
-            <CardTitle>Lỗi cần sửa</CardTitle>
-            <CardDescription>
-              Sửa CSV theo danh sách lỗi dưới đây rồi upload lại.
-            </CardDescription>
+            <CardTitle>Lỗi cần sửa trước khi import</CardTitle>
+            <CardDescription>Sửa file CSV theo lỗi bên dưới rồi upload lại để tránh dữ liệu sai.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border border-destructive/30">
@@ -286,4 +288,3 @@ export function StudentsImportPanel({ classId }: { classId: number }) {
     </div>
   );
 }
-
