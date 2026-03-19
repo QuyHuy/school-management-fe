@@ -57,7 +57,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
+    <div className="relative min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-sky-50 via-background to-indigo-50 dark:from-background dark:via-background dark:to-background">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Đăng ký tài khoản giáo viên</CardTitle>

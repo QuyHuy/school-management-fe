@@ -270,7 +270,7 @@ export function GradesPanel({ classId }: { classId: number }) {
             <div className="grid gap-3 sm:grid-cols-4">
               <div className="space-y-2">
                 <Label>Loại kiểm tra</Label>
-                <Select value={editTypeId ? String(editTypeId) : ""} onValueChange={(v) => setEditTypeId(Number(v) || null)}>
+                <Select value={editTypeId ? String(editTypeId) : ""} onValueChange={(v) => v && setEditTypeId(Number(v) || null)}>
                   <SelectTrigger><SelectValue placeholder="Chọn loại kiểm tra" /></SelectTrigger>
                   <SelectContent>
                     {sortedTypes.map((t) => (

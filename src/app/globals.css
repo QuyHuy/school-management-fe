@@ -130,14 +130,18 @@
 
 @layer components {
   .status-info {
-    @apply rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900;
+    @apply rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200;
   }
 
   .status-success {
-    @apply rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900;
+    @apply rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200;
   }
 
   .status-warn {
-    @apply rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900;
+    @apply rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200;
+  }
+
+  .status-danger {
+    @apply rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-200;
   }
 }
