@@ -1,16 +1,17 @@
 "use client";
 
-import { useMemo } from "react";
+import { use } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudentsImportPanel } from "@/features/students-import/StudentsImportPanel";
 import { AttendancePanel } from "@/features/attendance/AttendancePanel";
 import { GradesPanel } from "@/features/grades/GradesPanel";
 
-export default function ClassDetailPage({ params }: { params: { id: string } }) {
-  const classId = useMemo(() => Number(params.id), [params.id]);
+export default function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const classId = Number(id);
 
-  if (!Number.isFinite(classId)) {
+  if (!Number.isFinite(classId) || classId <= 0) {
     return <div className="p-6 text-sm text-destructive">Class id không hợp lệ.</div>;
   }
 
