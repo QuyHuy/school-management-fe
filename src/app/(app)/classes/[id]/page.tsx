@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StudentsImportPanel } from "@/features/students-import/StudentsImportPanel";
 
 export default function ClassDetailPage({ params }: { params: { id: string } }) {
   const classId = useMemo(() => Number(params.id), [params.id]);
@@ -27,7 +28,7 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
           <TabsTrigger value="grades">Điểm số</TabsTrigger>
         </TabsList>
         <TabsContent value="students">
-          <div className="text-sm text-muted-foreground">Sắp triển khai: import CSV + danh sách học sinh.</div>
+          <StudentsImportPanel classId={classId} />
         </TabsContent>
         <TabsContent value="attendance">
           <div className="text-sm text-muted-foreground">Sắp triển khai: tạo buổi học + điểm danh.</div>
