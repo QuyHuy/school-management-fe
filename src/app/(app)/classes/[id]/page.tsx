@@ -2,13 +2,13 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudentsPanel } from "@/features/students/StudentsPanel";
 import { SessionsPanel } from "@/features/sessions/SessionsPanel";
-import { GradesPanel } from "@/features/grades/GradesPanel";
 import { apiFetch } from "@/lib/api";
 
 type ClassInfo = {
@@ -21,8 +21,11 @@ type ClassInfo = {
 
 export default function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const searchParams = useSearchParams();
   const classId = Number(id);
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
+  const initialTab = searchParams.get("tab") === "sessions" ? "sessions" : "students";
+  const initialSessionId = Number(searchParams.get("sessionId"));
 
   useEffect(() => {
     apiFetch<ClassInfo>(`/classes/${classId}`).then(setClassInfo).catch(() => {});
@@ -58,21 +61,17 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="students" className="space-y-5">
-        <TabsList className="grid h-11 w-full grid-cols-3 rounded-lg bg-muted/70 p-1">
+      <Tabs defaultValue={initialTab} className="space-y-5">
+        <TabsList className="grid h-11 w-full grid-cols-2 rounded-lg bg-muted/70 p-1">
           <TabsTrigger value="students" className="rounded-md text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm">
             Học sinh
           </TabsTrigger>
           <TabsTrigger value="sessions" className="rounded-md text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm">
             Buổi học
           </TabsTrigger>
-          <TabsTrigger value="grades" className="rounded-md text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            Điểm số
-          </TabsTrigger>
         </TabsList>
         <TabsContent value="students"><StudentsPanel classId={classId} /></TabsContent>
-        <TabsContent value="sessions"><SessionsPanel classId={classId} /></TabsContent>
-        <TabsContent value="grades"><GradesPanel classId={classId} /></TabsContent>
+        <TabsContent value="sessions"><SessionsPanel classId={classId} initialSessionId={Number.isFinite(initialSessionId) ? initialSessionId : undefined} /></TabsContent>
       </Tabs>
     </div>
   );

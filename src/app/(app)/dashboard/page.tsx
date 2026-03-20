@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiFetch, ApiError } from "@/lib/api";
@@ -19,18 +20,48 @@ type Classroom = {
   grade_level?: string | null;
 };
 
+type DashboardSession = {
+  session_id: number;
+  class_id: number;
+  class_name: string;
+  date: string;
+  weekday?: number | null;
+  mode: "online" | "offline" | "off";
+  start_time?: string | null;
+  end_time?: string | null;
+  schedule_slot_id?: number | null;
+  note?: string | null;
+};
+
+const WEEKDAY_LABELS: Record<number, string> = {
+  1: "Chủ nhật",
+  2: "Thứ 2",
+  3: "Thứ 3",
+  4: "Thứ 4",
+  5: "Thứ 5",
+  6: "Thứ 6",
+  7: "Thứ 7",
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const [items, setItems] = useState<Classroom[]>([]);
+  const [sessions, setSessions] = useState<DashboardSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"calendar" | "agenda">("calendar");
 
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
-      setItems(await apiFetch<Classroom[]>("/classes"));
+      const [classes, dashboardSessions] = await Promise.all([
+        apiFetch<Classroom[]>("/classes"),
+        apiFetch<DashboardSession[]>("/dashboard/sessions"),
+      ]);
+      setItems(classes);
+      setSessions(dashboardSessions);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         clearAccessToken();
@@ -52,6 +83,28 @@ export default function DashboardPage() {
       [c.name, c.subject, c.grade_level, c.school_year].filter(Boolean).join(" ").toLowerCase().includes(q),
     );
   }, [items, search]);
+
+  const groupedSessions = useMemo(() => {
+    const groups: Record<number, DashboardSession[]> = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+    for (const s of sessions) {
+      const day = s.weekday ?? 1;
+      groups[day].push(s);
+    }
+    for (const day of Object.keys(groups)) {
+      groups[Number(day)].sort((a, b) => (a.start_time || "").localeCompare(b.start_time || ""));
+    }
+    return groups;
+  }, [sessions]);
+
+  const agenda = useMemo(
+    () =>
+      [...sessions].sort((a, b) => {
+        const dayDelta = (a.weekday ?? 1) - (b.weekday ?? 1);
+        if (dayDelta !== 0) return dayDelta;
+        return (a.start_time || "").localeCompare(b.start_time || "");
+      }),
+    [sessions],
+  );
 
   return (
     <div className="space-y-8">
@@ -101,6 +154,76 @@ export default function DashboardPage() {
 
       {error && <div className="status-warn">{error}</div>}
 
+      {/* ── Calendar / Agenda ── */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-base font-semibold">Lịch buổi học</p>
+              <p className="text-sm text-muted-foreground">Sắp xếp theo thứ và giờ học đã chọn</p>
+            </div>
+            <div className="inline-flex rounded-lg border bg-background p-1">
+              <Button size="sm" variant={viewMode === "calendar" ? "default" : "ghost"} onClick={() => setViewMode("calendar")}>
+                Lịch tuần
+              </Button>
+              <Button size="sm" variant={viewMode === "agenda" ? "default" : "ghost"} onClick={() => setViewMode("agenda")}>
+                Agenda
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {sessions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Chưa có buổi học nào để hiển thị lịch.</p>
+          ) : viewMode === "calendar" ? (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {Object.entries(WEEKDAY_LABELS).map(([key, label]) => {
+                const day = Number(key);
+                return (
+                  <div key={key} className="rounded-lg border bg-muted/20 p-3">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+                    <div className="space-y-2">
+                      {groupedSessions[day].length === 0 ? (
+                        <p className="text-xs text-muted-foreground">Trống</p>
+                      ) : (
+                        groupedSessions[day].map((s) => (
+                          <button
+                            key={s.session_id}
+                            type="button"
+                            className="w-full rounded-md border bg-card p-2 text-left transition hover:border-primary/40 hover:bg-primary/5"
+                            onClick={() => router.push(`/classes/${s.class_id}?tab=sessions&sessionId=${s.session_id}`)}
+                          >
+                            <p className="text-sm font-semibold text-foreground">{s.class_name}</p>
+                            <p className="text-xs text-muted-foreground">{(s.start_time || "").slice(0, 5)} - {(s.end_time || "").slice(0, 5)}</p>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {agenda.map((s) => (
+                <button
+                  key={s.session_id}
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-lg border bg-card p-3 text-left transition hover:border-primary/40 hover:bg-primary/5"
+                  onClick={() => router.push(`/classes/${s.class_id}?tab=sessions&sessionId=${s.session_id}`)}
+                >
+                  <div>
+                    <p className="text-sm font-semibold">{s.class_name}</p>
+                    <p className="text-xs text-muted-foreground">{WEEKDAY_LABELS[s.weekday || 1]} • {(s.start_time || "").slice(0, 5)} - {(s.end_time || "").slice(0, 5)}</p>
+                  </div>
+                  <Badge variant="outline">{s.mode}</Badge>
+                </button>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* ── Class list ── */}
       {loading ? (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -136,12 +259,9 @@ export default function DashboardPage() {
                 <Card className="h-full shadow-sm transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:shadow-primary/10">
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
-                        {c.name.slice(0, 2).toUpperCase()}
-                      </div>
                       <Badge variant="secondary" className="text-xs font-normal">#{c.id}</Badge>
                     </div>
-                    <p className="mt-3 text-base font-semibold leading-tight">{c.name}</p>
+                    <p className="mt-1 text-lg font-bold leading-tight text-primary">{c.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {[c.subject, c.grade_level ? `Khối ${c.grade_level}` : null, c.school_year].filter(Boolean).join(" • ") ||
                         "Chưa cập nhật thông tin"}

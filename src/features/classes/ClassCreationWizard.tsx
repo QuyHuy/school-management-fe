@@ -49,6 +49,14 @@ export function ClassCreationWizard({ onCreated }: Props) {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<{ valid: PreviewRow[]; errors: PreviewError[] } | null>(null);
   const [confirmingImport, setConfirmingImport] = useState(false);
+  const [manualName, setManualName] = useState("");
+  const [manualEmail, setManualEmail] = useState("");
+  const [manualPhone, setManualPhone] = useState("");
+  const [manualParentName, setManualParentName] = useState("");
+  const [manualParentPhone, setManualParentPhone] = useState("");
+  const [manualDob, setManualDob] = useState("");
+  const [addingManual, setAddingManual] = useState(false);
+  const [manualAdded, setManualAdded] = useState(0);
 
   const progressText = useMemo(() => `Bước ${step}/3`, [step]);
 
@@ -58,6 +66,9 @@ export function ClassCreationWizard({ onCreated }: Props) {
     setSlotWeekday("2"); setSlotStart("19:00"); setSlotEnd("20:30");
     setSlots([]); setAddingSlot(false);
     setCsvFile(null); setCsvPreview(null); setConfirmingImport(false);
+    setManualName(""); setManualEmail(""); setManualPhone("");
+    setManualParentName(""); setManualParentPhone(""); setManualDob("");
+    setAddingManual(false); setManualAdded(0);
   };
 
   const closeWizard = () => { setOpen(false); resetAll(); };
@@ -141,6 +152,37 @@ export function ClassCreationWizard({ onCreated }: Props) {
     if (!classroom) return;
     onCreated(classroom);
     closeWizard();
+  };
+
+  const addManualStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!classroom || !manualName.trim()) return;
+    setAddingManual(true);
+    try {
+      await apiFetch(`/classes/${classroom.id}/students`, {
+        method: "POST",
+        body: JSON.stringify({
+          full_name: manualName.trim(),
+          email: manualEmail.trim() || undefined,
+          phone: manualPhone.trim() || undefined,
+          parent_name: manualParentName.trim() || undefined,
+          parent_phone: manualParentPhone.trim() || undefined,
+          dob: manualDob || undefined,
+        }),
+      });
+      setManualAdded((v) => v + 1);
+      setManualName("");
+      setManualEmail("");
+      setManualPhone("");
+      setManualParentName("");
+      setManualParentPhone("");
+      setManualDob("");
+      toast.success("Đã thêm học sinh vào lớp.");
+    } catch {
+      toast.error("Thêm học sinh thủ công thất bại.");
+    } finally {
+      setAddingManual(false);
+    }
   };
 
   return (
@@ -238,11 +280,67 @@ export function ClassCreationWizard({ onCreated }: Props) {
         {/* Step 3: CSV import */}
         {step === 3 && classroom && (
           <div className="space-y-4 pt-2">
-            <p className="text-sm text-muted-foreground">Import danh sách học sinh ngay (khuyến nghị) hoặc bỏ qua và làm sau.</p>
-            <div className="flex items-center gap-3">
+            <p className="text-sm text-muted-foreground">Bạn có thể nhập tay từng học sinh hoặc import CSV ngay tại bước này.</p>
+
+            <div className="rounded-lg border p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h4 className="text-sm font-semibold">Điền tay học sinh</h4>
+                {manualAdded > 0 && (
+                  <span className="text-xs text-muted-foreground">Đã thêm: {manualAdded}</span>
+                )}
+              </div>
+              <form className="space-y-3" onSubmit={addManualStudent}>
+                <div className="space-y-2">
+                  <Label>Họ tên *</Label>
+                  <Input value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Nguyễn Văn A" required />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input value={manualEmail} onChange={(e) => setManualEmail(e.target.value)} type="email" placeholder="hs@email.com" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>SĐT học sinh</Label>
+                    <Input value={manualPhone} onChange={(e) => setManualPhone(e.target.value)} placeholder="0912345678" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Tên phụ huynh</Label>
+                    <Input value={manualParentName} onChange={(e) => setManualParentName(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>SĐT phụ huynh</Label>
+                    <Input value={manualParentPhone} onChange={(e) => setManualParentPhone(e.target.value)} placeholder="09xxxxxxxx" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-[1fr_auto] gap-3">
+                  <div className="space-y-2">
+                    <Label>Ngày sinh</Label>
+                    <Input type="date" value={manualDob} onChange={(e) => setManualDob(e.target.value)} />
+                  </div>
+                  <div className="flex items-end">
+                    <Button type="submit" variant="outline" disabled={addingManual}>
+                      {addingManual ? "Đang thêm..." : "Thêm học sinh"}
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <div className="rounded-lg border p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h4 className="text-sm font-semibold">Import CSV</h4>
+                <a href="/students-template.csv" download>
+                  <Button type="button" size="sm" variant="outline">Tải CSV mẫu</Button>
+                </a>
+              </div>
+              <div className="flex items-center gap-3">
               <Input type="file" accept=".csv" onChange={(e) => { setCsvFile(e.target.files?.[0] || null); setCsvPreview(null); }} />
               <Button onClick={previewCsv} disabled={!csvFile} variant="outline">Preview</Button>
             </div>
+            </div>
+
             {csvPreview && (
               <div className="space-y-3">
                 {csvPreview.errors.length > 0 && <div className="status-warn">{csvPreview.errors.length} lỗi trong CSV.</div>}

@@ -30,28 +30,18 @@ const MODE_CONFIG: Record<string, { label: string; color: string }> = {
   off: { label: "Nghỉ", color: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400" },
 };
 
-export function SessionsPanel({ classId }: { classId: number }) {
+export function SessionsPanel({ classId, initialSessionId }: { classId: number; initialSessionId?: number }) {
   const [slots, setSlots] = useState<ScheduleSlot[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [createOpen, setCreateOpen] = useState(false);
-  const [selSlot, setSelSlot] = useState("");
-  const [selDate, setSelDate] = useState("");
-  const [selMode, setSelMode] = useState("offline");
-  const [creating, setCreating] = useState(false);
-
-  const [addSlotOpen, setAddSlotOpen] = useState(false);
-  const [slotWeekday, setSlotWeekday] = useState("2");
-  const [slotStart, setSlotStart] = useState("19:00");
-  const [slotEnd, setSlotEnd] = useState("20:30");
-  const [addingSlot, setAddingSlot] = useState(false);
-
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [attendance, setAttendance] = useState<Record<number, string>>({});
   const [sessionNote, setSessionNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [onlineLink, setOnlineLink] = useState("");
+  const [assessmentName, setAssessmentName] = useState("");
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -71,51 +61,21 @@ export function SessionsPanel({ classId }: { classId: number }) {
 
   useEffect(() => { void loadAll(); }, [loadAll]);
 
-  const onAddSlot = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAddingSlot(true);
-    try {
-      await apiFetch(`/classes/${classId}/schedule-slots`, {
-        method: "POST",
-        body: JSON.stringify({ weekday: Number(slotWeekday), start_time: slotStart, end_time: slotEnd }),
-      });
-      toast.success("Đã thêm lịch học");
-      setAddSlotOpen(false);
-      void loadAll();
-    } catch {
-      toast.error("Thêm lịch thất bại");
-    } finally {
-      setAddingSlot(false);
-    }
-  };
-
-  const onCreateSession = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selSlot || !selDate) return;
-    setCreating(true);
-    try {
-      await apiFetch(`/classes/${classId}/sessions`, {
-        method: "POST",
-        body: JSON.stringify({ schedule_slot_id: Number(selSlot), date: selDate, mode: selMode }),
-      });
-      toast.success("Đã tạo buổi học");
-      setCreateOpen(false);
-      setSelSlot(""); setSelDate("");
-      void loadAll();
-    } catch {
-      toast.error("Tạo buổi học thất bại");
-    } finally {
-      setCreating(false);
-    }
-  };
-
   const openSession = (s: Session) => {
     setActiveSession(s);
     setSessionNote(s.note || "");
+    setOnlineLink("");
+    setAssessmentName("");
     const att: Record<number, string> = {};
     students.forEach((st) => { att[st.id] = "present"; });
     setAttendance(att);
   };
+
+  useEffect(() => {
+    if (!initialSessionId || sessions.length === 0 || activeSession) return;
+    const target = sessions.find((s) => s.id === initialSessionId);
+    if (target) openSession(target);
+  }, [initialSessionId, sessions, activeSession]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSaveSession = async () => {
     if (!activeSession) return;
@@ -160,15 +120,9 @@ export function SessionsPanel({ classId }: { classId: number }) {
       {/* Schedule slots */}
       <Card className="shadow-sm">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base">Lịch học hằng tuần</CardTitle>
-              <CardDescription className="mt-1">Định nghĩa các khung giờ cố định. Buổi học sẽ được tạo từ lịch này.</CardDescription>
-            </div>
-            <Button size="sm" variant="outline" onClick={() => setAddSlotOpen(true)}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-              Thêm lịch
-            </Button>
+          <div>
+            <CardTitle className="text-base">Lịch học hằng tuần</CardTitle>
+            <CardDescription className="mt-1">Các buổi học trên dashboard sẽ đi theo lịch này.</CardDescription>
           </div>
         </CardHeader>
         {slots.length > 0 && (
@@ -191,10 +145,7 @@ export function SessionsPanel({ classId }: { classId: number }) {
           <h3 className="text-lg font-semibold">Các buổi học</h3>
           <p className="text-sm text-muted-foreground">{sessions.length} buổi</p>
         </div>
-        <Button size="sm" onClick={() => setCreateOpen(true)} disabled={slots.length === 0}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-          Tạo buổi học
-        </Button>
+        <Badge variant="outline">Chọn buổi học từ Dashboard</Badge>
       </div>
 
       {sessions.length === 0 ? (
@@ -205,6 +156,7 @@ export function SessionsPanel({ classId }: { classId: number }) {
             </div>
             <CardTitle className="text-base">Chưa có buổi học</CardTitle>
             <CardDescription>{slots.length === 0 ? "Thêm lịch học trước, sau đó tạo buổi học." : "Bấm 'Tạo buổi học' để bắt đầu."}</CardDescription>
+            <CardDescription>Hãy vào Dashboard để chọn buổi học theo lịch tuần/agenda.</CardDescription>
           </CardHeader>
         </Card>
       ) : (
@@ -238,85 +190,6 @@ export function SessionsPanel({ classId }: { classId: number }) {
           })}
         </div>
       )}
-
-      {/* Add slot dialog */}
-      <Dialog open={addSlotOpen} onOpenChange={setAddSlotOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Thêm lịch học</DialogTitle>
-            <DialogDescription>Chọn thứ, giờ bắt đầu và giờ kết thúc.</DialogDescription>
-          </DialogHeader>
-          <form className="space-y-4" onSubmit={onAddSlot}>
-            <div className="space-y-2">
-              <Label>Thứ</Label>
-              <Select value={slotWeekday} onValueChange={(v) => v && setSlotWeekday(v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(WEEKDAYS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Giờ bắt đầu</Label>
-                <Input type="time" value={slotStart} onChange={(e) => setSlotStart(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Giờ kết thúc</Label>
-                <Input type="time" value={slotEnd} onChange={(e) => setSlotEnd(e.target.value)} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setAddSlotOpen(false)}>Huỷ</Button>
-              <Button type="submit" disabled={addingSlot}>{addingSlot ? "Đang thêm..." : "Thêm lịch"}</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Create session dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Tạo buổi học</DialogTitle>
-            <DialogDescription>Chọn lịch học và ngày cụ thể. Giờ học sẽ tự động điền.</DialogDescription>
-          </DialogHeader>
-          <form className="space-y-4" onSubmit={onCreateSession}>
-            <div className="space-y-2">
-              <Label>Lịch học</Label>
-              <Select value={selSlot} onValueChange={(v) => v && setSelSlot(v)}>
-                <SelectTrigger><SelectValue placeholder="Chọn lịch..." /></SelectTrigger>
-                <SelectContent>
-                  {slots.map((sl) => (
-                    <SelectItem key={sl.id} value={String(sl.id)}>
-                      {WEEKDAYS[sl.weekday]} {sl.start_time?.slice(0, 5)}–{sl.end_time?.slice(0, 5)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Ngày</Label>
-              <Input type="date" value={selDate} onChange={(e) => setSelDate(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label>Hình thức</Label>
-              <Select value={selMode} onValueChange={(v) => v && setSelMode(v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="offline">Offline</SelectItem>
-                  <SelectItem value="online">Online</SelectItem>
-                  <SelectItem value="off">Nghỉ</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Huỷ</Button>
-              <Button type="submit" disabled={creating || !selSlot || !selDate}>{creating ? "Đang tạo..." : "Tạo buổi học"}</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {/* Session detail (attendance + note) */}
       <Dialog open={!!activeSession} onOpenChange={(v) => { if (!v) setActiveSession(null); }}>
@@ -363,6 +236,27 @@ export function SessionsPanel({ classId }: { classId: number }) {
             <div className="space-y-2">
               <Label>Ghi chú buổi học</Label>
               <Textarea value={sessionNote} onChange={(e) => setSessionNote(e.target.value)} placeholder="Nhận xét chung về buổi học..." rows={3} />
+            </div>
+            <div className="space-y-2">
+              <Label>Link học online (Google Meet)</Label>
+              <Input value={onlineLink} onChange={(e) => setOnlineLink(e.target.value)} placeholder="https://meet.google.com/..." />
+            </div>
+            <div className="space-y-2">
+              <Label>Tạo kiểm tra trong buổi</Label>
+              <div className="flex gap-2">
+                <Input value={assessmentName} onChange={(e) => setAssessmentName(e.target.value)} placeholder="Ví dụ: Kiểm tra 15 phút buổi này" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (!assessmentName.trim()) return;
+                    toast.success("Đã tạo kiểm tra cho buổi học (luồng nhập điểm chi tiết sẽ ở milestone kế tiếp).");
+                    setAssessmentName("");
+                  }}
+                >
+                  Tạo
+                </Button>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setActiveSession(null)}>Đóng</Button>
