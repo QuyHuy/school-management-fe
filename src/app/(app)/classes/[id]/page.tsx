@@ -25,7 +25,9 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
   const classId = Number(id);
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
   const initialTab = searchParams.get("tab") === "sessions" ? "sessions" : "students";
-  const initialSessionId = Number(searchParams.get("sessionId"));
+  const rawSessionId = searchParams.get("sessionId");
+  const initialSessionId =
+    initialTab === "sessions" && rawSessionId && /^\d+$/.test(rawSessionId) ? Number(rawSessionId) : undefined;
 
   useEffect(() => {
     apiFetch<ClassInfo>(`/classes/${classId}`).then(setClassInfo).catch(() => {});
@@ -71,7 +73,7 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
           </TabsTrigger>
         </TabsList>
         <TabsContent value="students"><StudentsPanel classId={classId} /></TabsContent>
-        <TabsContent value="sessions"><SessionsPanel classId={classId} initialSessionId={Number.isFinite(initialSessionId) ? initialSessionId : undefined} /></TabsContent>
+        <TabsContent value="sessions"><SessionsPanel classId={classId} initialSessionId={initialSessionId} /></TabsContent>
       </Tabs>
     </div>
   );

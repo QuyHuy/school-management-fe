@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +42,7 @@ export function SessionsPanel({ classId, initialSessionId }: { classId: number; 
   const [saving, setSaving] = useState(false);
   const [onlineLink, setOnlineLink] = useState("");
   const [assessmentName, setAssessmentName] = useState("");
+  const hasAutoOpenedRef = useRef(false);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -72,9 +73,12 @@ export function SessionsPanel({ classId, initialSessionId }: { classId: number; 
   };
 
   useEffect(() => {
-    if (!initialSessionId || sessions.length === 0 || activeSession) return;
+    if (!initialSessionId || sessions.length === 0 || activeSession || hasAutoOpenedRef.current) return;
     const target = sessions.find((s) => s.id === initialSessionId);
-    if (target) openSession(target);
+    if (target) {
+      openSession(target);
+      hasAutoOpenedRef.current = true;
+    }
   }, [initialSessionId, sessions, activeSession]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSaveSession = async () => {
