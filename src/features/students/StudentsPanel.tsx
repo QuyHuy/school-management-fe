@@ -211,7 +211,7 @@ export function StudentsPanel({ classId }: { classId: number }) {
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="surface-section flex flex-wrap items-center gap-2">
         <Input
           placeholder="Tìm kiếm học sinh..."
           value={search}
@@ -235,14 +235,14 @@ export function StudentsPanel({ classId }: { classId: number }) {
           Đang tải...
         </div>
       ) : filtered.length === 0 ? (
-        <Card className="border-dashed">
+        <Card className="surface-section border-dashed">
           <CardHeader className="text-center">
             <CardTitle className="text-base">Chua co học sinh</CardTitle>
             <CardDescription>Thêm học sinh thu cong hoac import tu file CSV.</CardDescription>
           </CardHeader>
         </Card>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="surface-card overflow-x-auto rounded-lg">
           <Table>
             <TableHeader>
               <TableRow>

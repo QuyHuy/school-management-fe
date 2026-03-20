@@ -75,7 +75,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
+        <Card className="kpi-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardDescription className="text-xs font-medium uppercase tracking-wide">Tổng lớp</CardDescription>
           </CardHeader>
@@ -83,7 +83,7 @@ export default function DashboardPage() {
             <div className="text-3xl font-bold">{loading ? "-" : items.length}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="kpi-card">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs font-medium uppercase tracking-wide">Luồng chuẩn</CardDescription>
           </CardHeader>
@@ -91,7 +91,7 @@ export default function DashboardPage() {
             <p className="text-sm font-medium">Tạo lớp → Import CSV → Điểm danh → Điểm số</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="kpi-card">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs font-medium uppercase tracking-wide">Mẹo</CardDescription>
           </CardHeader>
@@ -115,7 +115,7 @@ export default function DashboardPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <Card className="border-dashed">
+        <Card className="surface-section border-dashed">
           <CardHeader className="text-center">
             <CardTitle className="text-lg">Chưa có lớp nào</CardTitle>
             <CardDescription>
@@ -140,7 +140,7 @@ export default function DashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredItems.map((c) => (
               <Link key={c.id} href={`/classes/${c.id}`} className="group block">
-                <Card className="h-full transition-all group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-md">
+                <Card className="surface-card surface-card-hover h-full">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
                       <CardTitle className="truncate text-base">{c.name}</CardTitle>

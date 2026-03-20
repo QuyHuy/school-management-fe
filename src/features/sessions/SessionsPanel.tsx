@@ -164,7 +164,7 @@ export function SessionsPanel({ classId }: { classId: number }) {
   return (
     <div className="space-y-6">
       {/* Schedule slots */}
-      <Card>
+      <Card className="surface-section">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Lịch học hằng tuần</CardTitle>
@@ -186,7 +186,7 @@ export function SessionsPanel({ classId }: { classId: number }) {
       </Card>
 
       {/* Sessions list */}
-      <div className="flex items-center justify-between">
+      <div className="surface-section flex items-center justify-between">
         <h3 className="text-base font-semibold">Các buổi học ({sessions.length})</h3>
         <Button size="sm" onClick={() => setCreateOpen(true)} disabled={slots.length === 0}>
           + Tạo buổi học
@@ -194,7 +194,7 @@ export function SessionsPanel({ classId }: { classId: number }) {
       </div>
 
       {sessions.length === 0 ? (
-        <Card className="border-dashed">
+        <Card className="surface-section border-dashed">
           <CardHeader className="text-center">
             <CardTitle className="text-base">Chưa có buổi học</CardTitle>
             <CardDescription>
@@ -209,7 +209,7 @@ export function SessionsPanel({ classId }: { classId: number }) {
           {sessions.map((s) => {
             const slot = slots.find((sl) => sl.id === s.schedule_slot_id);
             return (
-              <Card key={s.id} className="cursor-pointer transition-all hover:border-primary/40 hover:shadow-sm" onClick={() => openSession(s)}>
+              <Card key={s.id} className="surface-card surface-card-hover cursor-pointer" onClick={() => openSession(s)}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm">{s.date}</CardTitle>

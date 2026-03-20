@@ -129,6 +129,22 @@
 }
 
 @layer components {
+  .surface-section {
+    @apply rounded-2xl border border-border/70 bg-card/70 p-4 shadow-sm backdrop-blur-sm;
+  }
+
+  .surface-card {
+    @apply rounded-xl border border-border/70 bg-card shadow-sm transition-all;
+  }
+
+  .surface-card-hover {
+    @apply hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:border-primary/30;
+  }
+
+  .kpi-card {
+    @apply rounded-xl border border-border/70 bg-gradient-to-b from-card to-muted/30 shadow-sm;
+  }
+
   .status-info {
     @apply rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200;
   }

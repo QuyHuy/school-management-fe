@@ -34,7 +34,7 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border bg-card/80 p-4">
+      <div className="surface-section flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <Link href="/dashboard">
