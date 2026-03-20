@@ -23,6 +23,9 @@ type Student = {
   dob?: string | null;
 };
 
+type AssessmentType = { id: number; class_id: number; name: string; order: number };
+type Grade = { id: number; student_id: number; assessment_type_id: number; date: string; score: number; note?: string | null };
+
 type PreviewRow = Record<string, string>;
 type PreviewError = { row_number: number; field: string; message: string };
 
@@ -31,6 +34,11 @@ export function StudentsPanel({ classId }: { classId: number }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  const [activeStudentId, setActiveStudentId] = useState<number | null>(null);
+  const [assessmentTypes, setAssessmentTypes] = useState<AssessmentType[]>([]);
+  const [grades, setGrades] = useState<Grade[]>([]);
+  const [gradesLoading, setGradesLoading] = useState(false);
 
   const [addOpen, setAddOpen] = useState(false);
   const [addName, setAddName] = useState("");
@@ -56,6 +64,8 @@ export function StudentsPanel({ classId }: { classId: number }) {
     setLoading(true);
     try {
       setStudents(await apiFetch<Student[]>(`/classes/${classId}/students`));
+      // Assessment types are needed to map assessment_type_id -> name in grade history panel
+      setAssessmentTypes(await apiFetch<AssessmentType[]>(`/classes/${classId}/assessment-types`));
     } catch {
       toast.error("Không tải được danh sách học sinh");
     } finally {
@@ -64,6 +74,27 @@ export function StudentsPanel({ classId }: { classId: number }) {
   }, [classId]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    if (activeStudentId == null) return;
+    if (!students.some((s) => s.id === activeStudentId)) setActiveStudentId(null);
+  }, [activeStudentId, students]);
+
+  useEffect(() => {
+    if (activeStudentId == null) return;
+    setGradesLoading(true);
+    setGrades([]);
+    void (async () => {
+      try {
+        const res = await apiFetch<Grade[]>(`/students/${activeStudentId}/grades`);
+        setGrades(res);
+      } catch {
+        toast.error("Không tải được điểm của học sinh");
+      } finally {
+        setGradesLoading(false);
+      }
+    })();
+  }, [activeStudentId]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return students;
@@ -192,6 +223,51 @@ export function StudentsPanel({ classId }: { classId: number }) {
     }
   };
 
+  const typeNameMap = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const t of assessmentTypes) m.set(t.id, t.name);
+    return m;
+  }, [assessmentTypes]);
+
+  const SCORE_LABELS = [
+    { min: 0, max: 4.999, label: "Yếu" },
+    { min: 5, max: 6.4, label: "Trung Bình" },
+    { min: 6.5, max: 7.9, label: "Khá" },
+    { min: 8.0, max: 10, label: "Giỏi" },
+  ] as const;
+
+  const classifyScore = (avg: number | null | undefined) => {
+    if (avg == null || Number.isNaN(avg)) return "—";
+    for (const r of SCORE_LABELS) {
+      if (avg >= r.min && avg <= r.max) return r.label;
+    }
+    return "—";
+  };
+
+  const activeStudent = useMemo(() => students.find((s) => s.id === activeStudentId) ?? null, [students, activeStudentId]);
+
+  const overallAverage = useMemo(() => {
+    if (grades.length === 0) return null;
+    const sum = grades.reduce((acc, g) => acc + g.score, 0);
+    return sum / grades.length;
+  }, [grades]);
+
+  const gradesByDate = useMemo(() => {
+    const m = new Map<string, Grade[]>();
+    for (const g of grades) {
+      const key = g.date;
+      const arr = m.get(key) ?? [];
+      arr.push(g);
+      m.set(key, arr);
+    }
+    const entries = [...m.entries()].map(([date, gs]) => ({
+      date,
+      items: gs.slice().sort((a, b) => a.assessment_type_id - b.assessment_type_id),
+    }));
+    entries.sort((a, b) => b.date.localeCompare(a.date));
+    return entries;
+  }, [grades]);
+
   return (
     <div className="space-y-5">
       {/* Toolbar */}
@@ -256,9 +332,17 @@ export function StudentsPanel({ classId }: { classId: number }) {
             </TableHeader>
             <TableBody>
               {filtered.map((s) => (
-                <TableRow key={s.id} className={selected.has(s.id) ? "bg-primary/5" : ""}>
+                <TableRow
+                  key={s.id}
+                  className={`${selected.has(s.id) ? "bg-primary/5" : ""} ${activeStudentId === s.id ? "ring-2 ring-primary/30" : ""}`}
+                  onClick={() => setActiveStudentId(s.id)}
+                >
                   <TableCell className="pl-4">
-                    <Checkbox checked={selected.has(s.id)} onCheckedChange={() => toggleSelect(s.id)} />
+                    <Checkbox
+                      checked={selected.has(s.id)}
+                      onCheckedChange={() => toggleSelect(s.id)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
                   </TableCell>
                   <TableCell className="font-medium">{s.full_name}</TableCell>
                   <TableCell className="text-muted-foreground">{s.email || "—"}</TableCell>
@@ -266,7 +350,17 @@ export function StudentsPanel({ classId }: { classId: number }) {
                   <TableCell className="text-muted-foreground">{s.parent_name || "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{s.parent_phone || "—"}</TableCell>
                   <TableCell>
-                    <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => openEdit(s)}>Sửa</Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEdit(s);
+                      }}
+                    >
+                      Sửa
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -274,6 +368,86 @@ export function StudentsPanel({ classId }: { classId: number }) {
           </Table>
         </div>
       )}
+
+      {/* Grade history panel */}
+      <Card className="shadow-sm">
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">Lịch sử điểm học sinh</CardTitle>
+              <CardDescription>
+                {activeStudent ? `Chọn: ${activeStudent.full_name}` : "Bấm vào một học sinh để xem toàn bộ điểm theo từng buổi."}
+              </CardDescription>
+            </div>
+            {activeStudent && (
+              <Badge variant="outline">
+                {overallAverage == null ? "Chưa có điểm" : `TB: ${overallAverage.toFixed(1)} (${classifyScore(overallAverage)})`}
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardDescription className="px-6 pb-3">
+          {activeStudent ? "Điểm được nhóm theo ngày buổi học (date)." : ""}
+        </CardDescription>
+        <div className="px-6 pb-6">
+          {!activeStudent ? (
+            <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+              Chưa chọn học sinh.
+            </div>
+          ) : gradesLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-12 animate-pulse rounded-lg bg-muted/60" />
+              ))}
+            </div>
+          ) : gradesByDate.length === 0 ? (
+            <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+              Chưa có điểm nào cho học sinh này.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {gradesByDate.map((block) => {
+                const avg = block.items.reduce((acc, g) => acc + g.score, 0) / block.items.length;
+                const label = classifyScore(avg);
+                return (
+                  <div key={block.date} className="rounded-lg border bg-card p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-semibold">{block.date}</p>
+                      <Badge variant="secondary">
+                        TB: {avg.toFixed(1)} ({label})
+                      </Badge>
+                    </div>
+                    <div className="mt-3 overflow-hidden rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/40">
+                            <TableHead>Loại kiểm tra</TableHead>
+                            <TableHead className="w-[120px] text-right">Điểm</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {block.items.map((g) => (
+                            <TableRow key={g.id}>
+                              <TableCell className="text-sm">{typeNameMap.get(g.assessment_type_id) ?? `Loại #${g.assessment_type_id}`}</TableCell>
+                              <TableCell className="text-right text-sm">
+                                {g.score < 5 ? (
+                                  <span className="font-semibold text-destructive">{g.score}</span>
+                                ) : (
+                                  <span className="font-semibold">{g.score}</span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </Card>
 
       {/* Add student dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
