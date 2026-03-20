@@ -45,55 +45,39 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-sky-50 via-background to-indigo-50 dark:from-background dark:via-background dark:to-background">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Đăng nhập giáo viên</CardTitle>
-          <CardDescription>
-            Nhập email và mật khẩu để quản lý lớp, điểm danh và điểm số.
-          </CardDescription>
+    <div className="relative flex min-h-screen items-center justify-center bg-background p-6">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-violet-500/5 blur-3xl" />
+      </div>
+
+      <Card className="relative z-10 w-full max-w-md shadow-xl shadow-black/5">
+        <CardHeader className="space-y-3 pb-2 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <div>
+            <CardTitle className="text-xl">Đăng nhập</CardTitle>
+            <CardDescription className="mt-1">Nhập email và mật khẩu để tiếp tục quản lý lớp học.</CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={onSubmit}>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              <Input id="email" type="email" autoComplete="email" placeholder="giaovien@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="password">Mật khẩu</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <Input id="password" type="password" autoComplete="current-password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
-
-            {error && (
-              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {error}
-              </div>
-            )}
-
+            {error && <div className="status-danger">{error}</div>}
             <Button className="w-full" type="submit" disabled={submitting}>
               {submitting ? "Đang đăng nhập..." : "Đăng nhập"}
             </Button>
-
             <p className="text-center text-sm text-muted-foreground">
               Chưa có tài khoản?{" "}
-              <Link href="/register" className="text-primary underline-offset-4 hover:underline">
-                Đăng ký ngay
-              </Link>
+              <Link href="/register" className="font-medium text-primary hover:underline">Đăng ký ngay</Link>
             </p>
           </form>
         </CardContent>
@@ -101,4 +85,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
