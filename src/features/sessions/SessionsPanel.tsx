@@ -62,7 +62,7 @@ export function SessionsPanel({ classId }: { classId: number }) {
       setSessions(se);
       setStudents(st);
     } catch {
-      toast.error("Khong tai duoc du lieu");
+      toast.error("Không tải được dữ liệu");
     } finally {
       setLoading(false);
     }
@@ -79,11 +79,11 @@ export function SessionsPanel({ classId }: { classId: number }) {
         method: "POST",
         body: JSON.stringify({ weekday: Number(slotWeekday), start_time: slotStart, end_time: slotEnd }),
       });
-      toast.success("Da them lich hoc");
+      toast.success("Đã thêm lịch học");
       setAddSlotOpen(false);
       void loadAll();
     } catch {
-      toast.error("Them lich that bai");
+      toast.error("Thêm lịch thất bại");
     } finally {
       setAddingSlot(false);
     }
@@ -99,12 +99,12 @@ export function SessionsPanel({ classId }: { classId: number }) {
         method: "POST",
         body: JSON.stringify({ schedule_slot_id: Number(selSlot), date: selDate, mode: selMode }),
       });
-      toast.success("Da tao buoi hoc");
+      toast.success("Đã tạo buổi học");
       setCreateOpen(false);
       setSelSlot(""); setSelDate("");
       void loadAll();
     } catch {
-      toast.error("Tao buoi hoc that bai");
+      toast.error("Tạo buổi học thất bại");
     } finally {
       setCreating(false);
     }
@@ -142,11 +142,11 @@ export function SessionsPanel({ classId }: { classId: number }) {
         });
       }
 
-      toast.success("Da luu buoi hoc");
+      toast.success("Đã lưu buổi học");
       setActiveSession(null);
       void loadAll();
     } catch {
-      toast.error("Luu that bai");
+      toast.error("Lưu thất bại");
     } finally {
       setSaving(false);
     }
@@ -156,7 +156,7 @@ export function SessionsPanel({ classId }: { classId: number }) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground">
         <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-        Dang tai...
+        Đang tải...
       </div>
     );
   }
@@ -167,10 +167,10 @@ export function SessionsPanel({ classId }: { classId: number }) {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Lich hoc hang tuan</CardTitle>
-            <Button size="sm" variant="outline" onClick={() => setAddSlotOpen(true)}>+ Them lich</Button>
+            <CardTitle className="text-base">Lịch học hằng tuần</CardTitle>
+            <Button size="sm" variant="outline" onClick={() => setAddSlotOpen(true)}>+ Thêm lịch</Button>
           </div>
-          <CardDescription>Dinh nghia cac khung gio hoc co dinh. Buoi hoc se duoc tao tu lich nay.</CardDescription>
+          <CardDescription>Định nghĩa các khung giờ học cố định. Buổi học sẽ được tạo từ lịch này.</CardDescription>
         </CardHeader>
         {slots.length > 0 && (
           <CardContent>
@@ -187,20 +187,20 @@ export function SessionsPanel({ classId }: { classId: number }) {
 
       {/* Sessions list */}
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold">Cac buoi hoc ({sessions.length})</h3>
+        <h3 className="text-base font-semibold">Các buổi học ({sessions.length})</h3>
         <Button size="sm" onClick={() => setCreateOpen(true)} disabled={slots.length === 0}>
-          + Tao buoi hoc
+          + Tạo buổi học
         </Button>
       </div>
 
       {sessions.length === 0 ? (
         <Card className="border-dashed">
           <CardHeader className="text-center">
-            <CardTitle className="text-base">Chua co buoi hoc</CardTitle>
+            <CardTitle className="text-base">Chưa có buổi học</CardTitle>
             <CardDescription>
               {slots.length === 0
-                ? "Them lich hoc truoc, sau do tao buoi hoc."
-                : "Bam 'Tao buoi hoc' de bat dau."}
+                ? "Thêm lịch học trước, sau đó tạo buổi học."
+                : "Bấm 'Tạo buổi học' để bắt đầu."}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -237,12 +237,12 @@ export function SessionsPanel({ classId }: { classId: number }) {
       <Dialog open={addSlotOpen} onOpenChange={setAddSlotOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Them lich hoc</DialogTitle>
-            <DialogDescription>Chon thu, gio bat dau va gio ket thuc.</DialogDescription>
+            <DialogTitle>Thêm lịch học</DialogTitle>
+            <DialogDescription>Chọn thứ, giờ bắt đầu và giờ kết thúc.</DialogDescription>
           </DialogHeader>
           <form className="space-y-3" onSubmit={onAddSlot}>
             <div className="space-y-1">
-              <Label>Thu</Label>
+              <Label>Thứ</Label>
               <Select value={slotWeekday} onValueChange={(v) => v && setSlotWeekday(v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -254,17 +254,17 @@ export function SessionsPanel({ classId }: { classId: number }) {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label>Gio bat dau</Label>
+                <Label>Giờ bắt đầu</Label>
                 <Input type="time" value={slotStart} onChange={(e) => setSlotStart(e.target.value)} />
               </div>
               <div className="space-y-1">
-                <Label>Gio ket thuc</Label>
+                <Label>Giờ kết thúc</Label>
                 <Input type="time" value={slotEnd} onChange={(e) => setSlotEnd(e.target.value)} />
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setAddSlotOpen(false)}>Huy</Button>
-              <Button type="submit" disabled={addingSlot}>{addingSlot ? "Dang them..." : "Them"}</Button>
+              <Button type="button" variant="outline" onClick={() => setAddSlotOpen(false)}>Huỷ</Button>
+              <Button type="submit" disabled={addingSlot}>{addingSlot ? "Đang thêm..." : "Them"}</Button>
             </div>
           </form>
         </DialogContent>
@@ -274,14 +274,14 @@ export function SessionsPanel({ classId }: { classId: number }) {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Tao buoi hoc</DialogTitle>
-            <DialogDescription>Chon lich hoc va ngay cu the. Gio hoc se tu dong dien.</DialogDescription>
+            <DialogTitle>Tạo buổi học</DialogTitle>
+            <DialogDescription>Chọn lịch học và ngày cụ thể. Giờ học sẽ tự động điền.</DialogDescription>
           </DialogHeader>
           <form className="space-y-3" onSubmit={onCreateSession}>
             <div className="space-y-1">
-              <Label>Lich hoc</Label>
+              <Label>Lịch học</Label>
               <Select value={selSlot} onValueChange={(v) => v && setSelSlot(v)}>
-                <SelectTrigger><SelectValue placeholder="Chon lich..." /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Chọn lịch..." /></SelectTrigger>
                 <SelectContent>
                   {slots.map((sl) => (
                     <SelectItem key={sl.id} value={String(sl.id)}>
@@ -292,24 +292,24 @@ export function SessionsPanel({ classId }: { classId: number }) {
               </Select>
             </div>
             <div className="space-y-1">
-              <Label>Ngay</Label>
+              <Label>Ngày</Label>
               <Input type="date" value={selDate} onChange={(e) => setSelDate(e.target.value)} required />
             </div>
             <div className="space-y-1">
-              <Label>Hinh thuc</Label>
+              <Label>Hình thức</Label>
               <Select value={selMode} onValueChange={(v) => v && setSelMode(v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="offline">Offline</SelectItem>
                   <SelectItem value="online">Online</SelectItem>
-                  <SelectItem value="off">Nghi</SelectItem>
+                  <SelectItem value="off">Nghỉ</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Huy</Button>
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Huỷ</Button>
               <Button type="submit" disabled={creating || !selSlot || !selDate}>
-                {creating ? "Dang tao..." : "Tao buoi hoc"}
+                {creating ? "Đang tạo..." : "Tạo buổi học"}
               </Button>
             </div>
           </form>
@@ -320,7 +320,7 @@ export function SessionsPanel({ classId }: { classId: number }) {
       <Dialog open={!!activeSession} onOpenChange={(v) => { if (!v) setActiveSession(null); }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Buoi hoc {activeSession?.date}</DialogTitle>
+            <DialogTitle>Buổi học {activeSession?.date}</DialogTitle>
             <DialogDescription>
               {activeSession?.start_time?.slice(0, 5)}-{activeSession?.end_time?.slice(0, 5)} &bull; {activeSession?.mode}
             </DialogDescription>
@@ -328,16 +328,16 @@ export function SessionsPanel({ classId }: { classId: number }) {
           <div className="space-y-4">
             {/* Attendance */}
             <div>
-              <h4 className="mb-2 text-sm font-semibold">Diem danh</h4>
+              <h4 className="mb-2 text-sm font-semibold">Điểm danh</h4>
               {students.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Chua co hoc sinh.</p>
+                <p className="text-sm text-muted-foreground">Chưa có học sinh.</p>
               ) : (
                 <div className="max-h-56 overflow-y-auto rounded border">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Ho ten</TableHead>
-                        <TableHead className="w-32">Trang thai</TableHead>
+                        <TableHead>Họ tên</TableHead>
+                        <TableHead className="w-32">Trạng thái</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -348,10 +348,10 @@ export function SessionsPanel({ classId }: { classId: number }) {
                             <Select value={attendance[st.id] || "present"} onValueChange={(v) => v && setAttendance((p) => ({ ...p, [st.id]: v }))}>
                               <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="present">Co mat</SelectItem>
-                                <SelectItem value="absent">Vang</SelectItem>
-                                <SelectItem value="late">Tre</SelectItem>
-                                <SelectItem value="excused">Co phep</SelectItem>
+                                <SelectItem value="present">Có mặt</SelectItem>
+                                <SelectItem value="absent">Vắng</SelectItem>
+                                <SelectItem value="late">Trễ</SelectItem>
+                                <SelectItem value="excused">Có phép</SelectItem>
                               </SelectContent>
                             </Select>
                           </TableCell>
@@ -365,13 +365,13 @@ export function SessionsPanel({ classId }: { classId: number }) {
 
             {/* Note */}
             <div className="space-y-1">
-              <Label>Ghi chu buoi hoc</Label>
-              <Textarea value={sessionNote} onChange={(e) => setSessionNote(e.target.value)} placeholder="Nhan xet chung ve buoi hoc..." rows={3} />
+              <Label>Ghi chú buổi học</Label>
+              <Textarea value={sessionNote} onChange={(e) => setSessionNote(e.target.value)} placeholder="Nhận xét chung về buổi học..." rows={3} />
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setActiveSession(null)}>Dong</Button>
-              <Button onClick={onSaveSession} disabled={saving}>{saving ? "Dang luu..." : "Luu"}</Button>
+              <Button variant="outline" onClick={() => setActiveSession(null)}>Đóng</Button>
+              <Button onClick={onSaveSession} disabled={saving}>{saving ? "Đang lưu..." : "Lưu"}</Button>
             </div>
           </div>
         </DialogContent>

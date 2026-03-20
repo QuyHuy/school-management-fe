@@ -29,13 +29,12 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
   }, [classId]);
 
   if (!Number.isFinite(classId) || classId <= 0) {
-    return <div className="status-warn">Class id khong hop le.</div>;
+    return <div className="status-warn">ID lớp không hợp lệ.</div>;
   }
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border bg-card/80 p-4">
         <div>
           <div className="flex items-center gap-2">
             <Link href="/dashboard">
@@ -43,45 +42,30 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {classInfo?.name ?? `Lop #${classId}`}
-            </h1>
+            <h1 className="text-2xl font-bold tracking-tight">{classInfo?.name ?? `Lớp #${classId}`}</h1>
           </div>
           {classInfo && (
             <p className="mt-1 text-sm text-muted-foreground">
-              {[classInfo.subject, classInfo.grade_level ? `Khoi ${classInfo.grade_level}` : null, classInfo.school_year].filter(Boolean).join(" \u2022 ") || ""}
+              {[classInfo.subject, classInfo.grade_level ? `Khối ${classInfo.grade_level}` : null, classInfo.school_year].filter(Boolean).join(" • ")}
             </p>
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary">Hoc sinh</Badge>
-          <Badge variant="outline">Buoi hoc</Badge>
-          <Badge variant="outline">Diem so</Badge>
+          <Badge variant="secondary">Học sinh</Badge>
+          <Badge variant="outline">Buổi học</Badge>
+          <Badge variant="outline">Điểm số</Badge>
         </div>
       </div>
 
-      {/* Tabs */}
       <Tabs defaultValue="students" className="space-y-4">
         <TabsList className="grid h-auto w-full grid-cols-3 gap-2 rounded-lg bg-muted p-1">
-          <TabsTrigger value="students" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            Hoc sinh
-          </TabsTrigger>
-          <TabsTrigger value="sessions" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            Buoi hoc
-          </TabsTrigger>
-          <TabsTrigger value="grades" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            Diem so
-          </TabsTrigger>
+          <TabsTrigger value="students" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">Học sinh</TabsTrigger>
+          <TabsTrigger value="sessions" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">Buổi học</TabsTrigger>
+          <TabsTrigger value="grades" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">Điểm số</TabsTrigger>
         </TabsList>
-        <TabsContent value="students">
-          <StudentsPanel classId={classId} />
-        </TabsContent>
-        <TabsContent value="sessions">
-          <SessionsPanel classId={classId} />
-        </TabsContent>
-        <TabsContent value="grades">
-          <GradesPanel classId={classId} />
-        </TabsContent>
+        <TabsContent value="students"><StudentsPanel classId={classId} /></TabsContent>
+        <TabsContent value="sessions"><SessionsPanel classId={classId} /></TabsContent>
+        <TabsContent value="grades"><GradesPanel classId={classId} /></TabsContent>
       </Tabs>
     </div>
   );

@@ -60,7 +60,7 @@ export function StudentsPanel({ classId }: { classId: number }) {
       const data = await apiFetch<Student[]>(`/classes/${classId}/students`);
       setStudents(data);
     } catch {
-      toast.error("Khong tai duoc danh sach hoc sinh");
+      toast.error("Không tải được danh sách học sinh");
     } finally {
       setLoading(false);
     }
@@ -112,13 +112,13 @@ export function StudentsPanel({ classId }: { classId: number }) {
           dob: addDob || undefined,
         }),
       });
-      toast.success("Da them hoc sinh");
+      toast.success("Đã thêm học sinh");
       setAddOpen(false);
       setAddName(""); setAddEmail(""); setAddPhone("");
       setAddParentName(""); setAddParentPhone(""); setAddDob("");
       void load();
     } catch {
-      toast.error("Them hoc sinh that bai");
+      toast.error("Thêm học sinh thất bại");
     } finally {
       setAdding(false);
     }
@@ -145,11 +145,11 @@ export function StudentsPanel({ classId }: { classId: number }) {
           parent_phone: editParentPhone.trim() || undefined,
         }),
       });
-      toast.success("Da cap nhat");
+      toast.success("Đã cập nhật");
       setEditStudent(null);
       void load();
     } catch {
-      toast.error("Cap nhat that bai");
+      toast.error("Cập nhật thất bại");
     } finally {
       setEditing(false);
     }
@@ -158,17 +158,17 @@ export function StudentsPanel({ classId }: { classId: number }) {
   // Bulk delete
   const onBulkDelete = async () => {
     if (selected.size === 0) return;
-    if (!confirm(`Xoa ${selected.size} hoc sinh?`)) return;
+    if (!confirm(`Xóa ${selected.size} học sinh?`)) return;
     try {
       const res = await apiFetch<{ deleted: number }>(`/classes/${classId}/students/bulk-delete`, {
         method: "POST",
         body: JSON.stringify({ student_ids: Array.from(selected) }),
       });
-      toast.success(`Da xoa ${res.deleted} hoc sinh`);
+      toast.success(`Da xoa ${res.deleted} học sinh`);
       setSelected(new Set());
       void load();
     } catch {
-      toast.error("Xoa that bai");
+      toast.error("Xóa that bai");
     }
   };
 
@@ -184,7 +184,7 @@ export function StudentsPanel({ classId }: { classId: number }) {
       );
       setCsvPreview({ valid: res.valid_rows, errors: res.errors });
     } catch {
-      toast.error("Preview CSV that bai");
+      toast.error("Preview CSV thất bại");
     }
   };
 
@@ -196,13 +196,13 @@ export function StudentsPanel({ classId }: { classId: number }) {
         `/classes/${classId}/students/import/confirm`,
         { method: "POST", body: JSON.stringify({ rows: csvPreview.valid }) },
       );
-      toast.success(`Da import ${res.created} hoc sinh`);
+      toast.success(`Đã import ${res.created} học sinh`);
       setCsvOpen(false);
       setCsvFile(null);
       setCsvPreview(null);
       void load();
     } catch {
-      toast.error("Confirm import that bai");
+      toast.error("Xác nhận import thất bại");
     } finally {
       setCsvConfirming(false);
     }
@@ -213,32 +213,32 @@ export function StudentsPanel({ classId }: { classId: number }) {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <Input
-          placeholder="Tim kiem hoc sinh..."
+          placeholder="Tìm kiếm học sinh..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
         />
-        <Button size="sm" onClick={() => setAddOpen(true)}>+ Them hoc sinh</Button>
+        <Button size="sm" onClick={() => setAddOpen(true)}>+ Thêm học sinh</Button>
         <Button size="sm" variant="outline" onClick={() => setCsvOpen(true)}>Import CSV</Button>
         {selected.size > 0 && (
           <Button size="sm" variant="destructive" onClick={onBulkDelete}>
-            Xoa ({selected.size})
+            Xóa ({selected.size})
           </Button>
         )}
-        <Badge variant="secondary" className="ml-auto">{students.length} hoc sinh</Badge>
+        <Badge variant="secondary" className="ml-auto">{students.length} học sinh</Badge>
       </div>
 
       {/* Table */}
       {loading ? (
         <div className="flex items-center gap-2 text-muted-foreground">
           <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-          Dang tai...
+          Đang tải...
         </div>
       ) : filtered.length === 0 ? (
         <Card className="border-dashed">
           <CardHeader className="text-center">
-            <CardTitle className="text-base">Chua co hoc sinh</CardTitle>
-            <CardDescription>Them hoc sinh thu cong hoac import tu file CSV.</CardDescription>
+            <CardTitle className="text-base">Chua co học sinh</CardTitle>
+            <CardDescription>Thêm học sinh thu cong hoac import tu file CSV.</CardDescription>
           </CardHeader>
         </Card>
       ) : (
@@ -249,10 +249,10 @@ export function StudentsPanel({ classId }: { classId: number }) {
                 <TableHead className="w-10">
                   <input type="checkbox" checked={selected.size === filtered.length && filtered.length > 0} onChange={toggleAll} />
                 </TableHead>
-                <TableHead>Ho ten</TableHead>
+                <TableHead>Họ tên</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>SĐT</TableHead>
-                <TableHead>Phu huynh</TableHead>
+                <TableHead>Phụ huynh</TableHead>
                 <TableHead>SĐT PH</TableHead>
                 <TableHead className="w-20"></TableHead>
               </TableRow>
@@ -269,7 +269,7 @@ export function StudentsPanel({ classId }: { classId: number }) {
                   <TableCell className="text-xs">{s.parent_name || "-"}</TableCell>
                   <TableCell className="text-xs">{s.parent_phone || "-"}</TableCell>
                   <TableCell>
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(s)}>Sua</Button>
+                    <Button size="sm" variant="ghost" onClick={() => openEdit(s)}>Sửa</Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -282,12 +282,12 @@ export function StudentsPanel({ classId }: { classId: number }) {
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Them hoc sinh</DialogTitle>
-            <DialogDescription>Nhap thong tin hoc sinh moi.</DialogDescription>
+            <DialogTitle>Thêm học sinh</DialogTitle>
+            <DialogDescription>Nhap thong tin học sinh moi.</DialogDescription>
           </DialogHeader>
           <form className="space-y-3" onSubmit={onAddStudent}>
             <div className="space-y-1">
-              <Label>Ho ten *</Label>
+              <Label>Họ tên *</Label>
               <Input value={addName} onChange={(e) => setAddName(e.target.value)} required />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -296,27 +296,27 @@ export function StudentsPanel({ classId }: { classId: number }) {
                 <Input type="email" value={addEmail} onChange={(e) => setAddEmail(e.target.value)} />
               </div>
               <div className="space-y-1">
-                <Label>SDT</Label>
+                <Label>SĐT</Label>
                 <Input value={addPhone} onChange={(e) => setAddPhone(e.target.value)} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label>Ten phu huynh</Label>
+                <Label>Tên phụ huynh</Label>
                 <Input value={addParentName} onChange={(e) => setAddParentName(e.target.value)} />
               </div>
               <div className="space-y-1">
-                <Label>SDT phu huynh</Label>
+                <Label>SĐT phu huynh</Label>
                 <Input value={addParentPhone} onChange={(e) => setAddParentPhone(e.target.value)} />
               </div>
             </div>
             <div className="space-y-1">
-              <Label>Ngay sinh</Label>
+              <Label>Ngày sinh</Label>
               <Input type="date" value={addDob} onChange={(e) => setAddDob(e.target.value)} />
             </div>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>Huy</Button>
-              <Button type="submit" disabled={adding}>{adding ? "Dang them..." : "Them"}</Button>
+              <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>Huỷ</Button>
+              <Button type="submit" disabled={adding}>{adding ? "Đang thêm..." : "Thêm"}</Button>
             </div>
           </form>
         </DialogContent>
@@ -326,26 +326,26 @@ export function StudentsPanel({ classId }: { classId: number }) {
       <Dialog open={!!editStudent} onOpenChange={(v) => { if (!v) setEditStudent(null); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Sua hoc sinh</DialogTitle>
+            <DialogTitle>Sửa học sinh</DialogTitle>
           </DialogHeader>
           <form className="space-y-3" onSubmit={onEditStudent}>
             <div className="space-y-1">
-              <Label>Ho ten</Label>
+              <Label>Họ tên</Label>
               <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label>Ten phu huynh</Label>
+                <Label>Tên phụ huynh</Label>
                 <Input value={editParentName} onChange={(e) => setEditParentName(e.target.value)} />
               </div>
               <div className="space-y-1">
-                <Label>SDT phu huynh</Label>
+                <Label>SĐT phu huynh</Label>
                 <Input value={editParentPhone} onChange={(e) => setEditParentPhone(e.target.value)} />
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setEditStudent(null)}>Huy</Button>
-              <Button type="submit" disabled={editing}>{editing ? "Dang luu..." : "Luu"}</Button>
+              <Button type="button" variant="outline" onClick={() => setEditStudent(null)}>Huỷ</Button>
+              <Button type="submit" disabled={editing}>{editing ? "Đang lưu..." : "Lưu"}</Button>
             </div>
           </form>
         </DialogContent>
@@ -355,9 +355,9 @@ export function StudentsPanel({ classId }: { classId: number }) {
       <Dialog open={csvOpen} onOpenChange={(v) => { setCsvOpen(v); if (!v) { setCsvFile(null); setCsvPreview(null); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Import hoc sinh tu CSV</DialogTitle>
+            <DialogTitle>Import học sinh tu CSV</DialogTitle>
             <DialogDescription>
-              File CSV can cac cot: full_name, email, phone, parent_name, parent_phone, dob
+              File CSV cần các cột: full_name, email, phone, parent_name, parent_phone, dob
             </DialogDescription>
           </DialogHeader>
 
@@ -373,14 +373,14 @@ export function StudentsPanel({ classId }: { classId: number }) {
               <div className="space-y-3">
                 {csvPreview.errors.length > 0 && (
                   <div className="status-warn">
-                    <strong>{csvPreview.errors.length} loi:</strong>{" "}
+                    <strong>{csvPreview.errors.length} lỗi:</strong>{" "}
                     {csvPreview.errors.map((e, i) => (
-                      <span key={i}>Dong {e.row_number}: {e.field} - {e.message}{i < csvPreview.errors.length - 1 ? "; " : ""}</span>
+                      <span key={i}>Dòng {e.row_number}: {e.field} - {e.message}{i < csvPreview.errors.length - 1 ? "; " : ""}</span>
                     ))}
                   </div>
                 )}
                 <div className="status-info">
-                  {csvPreview.valid.length} dong hop le, san sang import.
+                  {csvPreview.valid.length} dòng hợp lệ, sẵn sàng import.
                 </div>
 
                 {csvPreview.valid.length > 0 && (
@@ -388,9 +388,9 @@ export function StudentsPanel({ classId }: { classId: number }) {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Ho ten</TableHead>
+                          <TableHead>Họ tên</TableHead>
                           <TableHead>Email</TableHead>
-                          <TableHead>SDT</TableHead>
+                          <TableHead>SĐT</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -408,7 +408,7 @@ export function StudentsPanel({ classId }: { classId: number }) {
 
                 {/* Step 3: Confirm */}
                 <Button onClick={onCsvConfirm} disabled={csvPreview.valid.length === 0 || csvConfirming}>
-                  {csvConfirming ? "Dang import..." : `Xac nhan import ${csvPreview.valid.length} hoc sinh`}
+                  {csvConfirming ? "Đang import..." : `Xác nhận import ${csvPreview.valid.length} học sinh`}
                 </Button>
               </div>
             )}
