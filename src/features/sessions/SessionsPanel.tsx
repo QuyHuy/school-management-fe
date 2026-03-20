@@ -144,6 +144,23 @@ export function SessionsPanel({ classId, initialSessionId }: { classId: number; 
     setExamScoreDraft(scores);
   }, [examAssessmentTypeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Student average in current session (based on all grades already created in this session)
+  // Important: this must be declared before any early return to keep hook ordering stable.
+  const studentAverageById = useMemo(() => {
+    const sums = new Map<number, { sum: number; count: number }>();
+    for (const g of sessionGrades) {
+      const cur = sums.get(g.student_id) ?? { sum: 0, count: 0 };
+      cur.sum += g.score;
+      cur.count += 1;
+      sums.set(g.student_id, cur);
+    }
+    const avg = new Map<number, number>();
+    for (const [sid, v] of sums.entries()) {
+      avg.set(sid, v.count ? v.sum / v.count : 0);
+    }
+    return avg;
+  }, [sessionGrades]);
+
   const onSaveAttendance = async () => {
     if (!selectedSessionId) return;
     try {
@@ -268,22 +285,6 @@ export function SessionsPanel({ classId, initialSessionId }: { classId: number; 
   }
 
   const selectedMode = MODE_CONFIG[selectedSession.mode] || MODE_CONFIG.offline;
-
-  // Student average in current session (simple, based on all grades already created in this session)
-  const studentAverageById = useMemo(() => {
-    const sums = new Map<number, { sum: number; count: number }>();
-    for (const g of sessionGrades) {
-      const cur = sums.get(g.student_id) ?? { sum: 0, count: 0 };
-      cur.sum += g.score;
-      cur.count += 1;
-      sums.set(g.student_id, cur);
-    }
-    const avg = new Map<number, number>();
-    for (const [sid, v] of sums.entries()) {
-      avg.set(sid, v.count ? v.sum / v.count : 0);
-    }
-    return avg;
-  }, [sessionGrades]);
 
   return (
     <div className="space-y-6">
